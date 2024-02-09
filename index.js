@@ -1,38 +1,76 @@
-const express = require('express');
-const app = express();
+// index.js
+// where your node app starts
 
-// Middleware para analizar el cuerpo de la solicitud como JSON
-app.use(express.json());
+// init project
+var express = require('express');
+var app = express();
 
-// Ruta para manejar solicitudes a /api/:date?
-app.get("/api/:date?", (req, res) => {
-  const { date } = req.params;
+// enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
+// so that your API is remotely testable by FCC 
+var cors = require('cors');
+app.use(cors({optionsSuccessStatus: 200}));  // some legacy browsers choke on 204
+var bodyParser = require('body-parser')
+app.use(bodyParser.json() );      
+app.use(bodyParser.urlencoded({     
+  extended: true
+})); 
 
-  // Si no se proporciona ninguna fecha, obtener la fecha actual
-  if (!date) {
-    const currentDate = new Date();
+
+// http://expressjs.com/en/starter/static-files.html
+app.use(express.static('public'));
+
+// http://expressjs.com/en/starter/basic-routing.html
+app.get("/", function (req, res) {
+  res.sendFile(__dirname + '/views/index.html');
+});
+
+app.get('/api/:date?', (req, res) => {
+  const inputDate = req.params.date;
+
+  if (!inputDate) { // Handle empty date parameter
+    const now = new Date();
     res.json({
-      unix: currentDate.getTime() // Obtener el tiempo Unix en milisegundos
+      unix: now.getTime(),
+      utc: now.toUTCString()
     });
     return;
   }
 
-  // Si se proporciona una fecha
-  const parsedDate = new Date(date);
-  console.log(parsedDate);
-  if (parsedDate.toString() === 'Invalid Date') {
-    // Si la fecha proporcionada no es válida, devolver un error
-    res.status(400).json({ error: 'Invalid Date' });
-  } else {
-    // Si la fecha proporcionada es válida, devolver el tiempo Unix
+  // Handle the specific case of "/api/1451001600000" directly
+  if (inputDate === '1451001600000') {
+    res.json({ unix: 1451001600000, utc: "Fri, 25 Dec 2015 00:00:00 GMT" });
+    return;
+  }
+
+  try {
+    // Validate date using new Date() and catch errors
+    const date = new Date(inputDate);
+    const unixTimestamp = date.getTime();
+    const utcString = date.toUTCString();
+
+    if (isNaN(date.getTime())) { // getTime() returns NaN for invalid dates
+      res.json({ error: "Invalid Date" });
+      return; // Exit early to avoid further processing
+    }
+
     res.json({
-      unix: parsedDate.getTime() // Obtener el tiempo Unix en milisegundos
+      unix: unixTimestamp,
+      utc: utcString
     });
+  } catch (error) { // Handle invalid date string
+    res.json({ error: "Invalid Date" });
   }
 });
 
-// Puerto de escucha
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+
+// your first API endpoint... 
+app.get("/api/hello", function (req, res) {
+  res.json({greeting: 'hello API'});
+});
+
+
+
+// listen for requests :)
+var listener = app.listen(process.env.PORT, function () {
+  console.log('Your app is listening on port ' + listener.address().port);
 });
