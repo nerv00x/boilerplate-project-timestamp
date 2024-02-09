@@ -19,6 +19,7 @@ app.get("/api/:date?", (req, res) => {
 
   // Si se proporciona una fecha
   const parsedDate = new Date(date);
+  console.log(parsedDate);
   if (parsedDate.toString() === 'Invalid Date') {
     // Si la fecha proporcionada no es válida, devolver un error
     res.status(400).json({ error: 'Invalid Date' });
