@@ -1,19 +1,8 @@
 const express = require('express');
 const app = express();
 
-// Middlewares
-app.use(express.static('public'));
+// Middleware para analizar el cuerpo de la solicitud como JSON
 app.use(express.json());
-
-// Función para obtener la fecha en formato UTC
-const getUTCDate = (date) => {
-  return new Date(date).toUTCString();
-};
-
-// Ruta principal
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + '/views/index.html');
-});
 
 // Ruta para manejar solicitudes a /api/:date?
 app.get("/api/:date?", (req, res) => {
@@ -23,8 +12,7 @@ app.get("/api/:date?", (req, res) => {
   if (!date) {
     const currentDate = new Date();
     res.json({
-      unix: currentDate.getTime(),
-      utc: getUTCDate(currentDate)
+      unix: currentDate.getTime() // Obtener el tiempo Unix en milisegundos
     });
     return;
   }
@@ -33,36 +21,13 @@ app.get("/api/:date?", (req, res) => {
   const parsedDate = new Date(date);
   if (parsedDate.toString() === 'Invalid Date') {
     // Si la fecha proporcionada no es válida, devolver un error
-    res.json({ error: 'Invalid Date' });
+    res.status(400).json({ error: 'Invalid Date' });
   } else {
-    // Si la fecha proporcionada es válida, devolver el objeto JSON requerido
+    // Si la fecha proporcionada es válida, devolver el tiempo Unix
     res.json({
-      unix: parsedDate.getTime(),
-      utc: getUTCDate(parsedDate)
+      unix: parsedDate.getTime() // Obtener el tiempo Unix en milisegundos
     });
   }
-});
-
-// Ruta para manejar solicitudes a /api/1451001600000
-app.get("/api/:timestamp", (req, res) => {
-  const { timestamp } = req.params;
-  const parsedTimestamp = new Date(parseInt(timestamp));
-
-  if (parsedTimestamp.toString() === 'Invalid Date') {
-    // Si el timestamp proporcionado no es válido, devolver un error
-    res.json({ error: 'Invalid Timestamp' });
-  } else {
-    // Si el timestamp proporcionado es válido, devolver el objeto JSON requerido
-    res.json({
-      unix: parsedTimestamp.getTime(),
-      utc: getUTCDate(parsedTimestamp)
-    });
-  }
-});
-
-// Ruta para manejar todas las demás solicitudes
-app.use((req, res) => {
-  res.status(404).send('Not Found');
 });
 
 // Puerto de escucha
