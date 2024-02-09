@@ -1,32 +1,72 @@
-// index.js
-// where your node app starts
+const express = require('express');
+const app = express();
 
-// init project
-var express = require('express');
-var app = express();
-
-// enable CORS (https://en.wikipedia.org/wiki/Cross-origin_resource_sharing)
-// so that your API is remotely testable by FCC 
-var cors = require('cors');
-app.use(cors({optionsSuccessStatus: 200}));  // some legacy browsers choke on 204
-
-// http://expressjs.com/en/starter/static-files.html
+// Middlewares
 app.use(express.static('public'));
+app.use(express.json());
 
-// http://expressjs.com/en/starter/basic-routing.html
-app.get("/", function (req, res) {
+// Función para obtener la fecha en formato UTC
+const getUTCDate = (date) => {
+  return new Date(date).toUTCString();
+};
+
+// Ruta principal
+app.get("/", (req, res) => {
   res.sendFile(__dirname + '/views/index.html');
 });
 
+// Ruta para manejar solicitudes a /api/:date?
+app.get("/api/:date?", (req, res) => {
+  const { date } = req.params;
 
-// your first API endpoint... 
-app.get("/api/hello", function (req, res) {
-  res.json({greeting: 'hello API'});
+  // Si no se proporciona ninguna fecha, obtener la fecha actual
+  if (!date) {
+    const currentDate = new Date();
+    res.json({
+      unix: currentDate.getTime(),
+      utc: getUTCDate(currentDate)
+    });
+    return;
+  }
+
+  // Si se proporciona una fecha
+  const parsedDate = new Date(date);
+  if (parsedDate.toString() === 'Invalid Date') {
+    // Si la fecha proporcionada no es válida, devolver un error
+    res.json({ error: 'Invalid Date' });
+  } else {
+    // Si la fecha proporcionada es válida, devolver el objeto JSON requerido
+    res.json({
+      unix: parsedDate.getTime(),
+      utc: getUTCDate(parsedDate)
+    });
+  }
 });
 
+// Ruta para manejar solicitudes a /api/1451001600000
+app.get("/api/:timestamp", (req, res) => {
+  const { timestamp } = req.params;
+  const parsedTimestamp = new Date(parseInt(timestamp));
 
+  if (parsedTimestamp.toString() === 'Invalid Date') {
+    // Si el timestamp proporcionado no es válido, devolver un error
+    res.json({ error: 'Invalid Timestamp' });
+  } else {
+    // Si el timestamp proporcionado es válido, devolver el objeto JSON requerido
+    res.json({
+      unix: parsedTimestamp.getTime(),
+      utc: getUTCDate(parsedTimestamp)
+    });
+  }
+});
 
-// listen for requests :)
-var listener = app.listen(process.env.PORT, function () {
-  console.log('Your app is listening on port ' + listener.address().port);
+// Ruta para manejar todas las demás solicitudes
+app.use((req, res) => {
+  res.status(404).send('Not Found');
+});
+
+// Puerto de escucha
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
