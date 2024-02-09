@@ -11,7 +11,8 @@ app.get("/api/:date?", (req, res) => {
   if (!inputDate) { // Si no se proporciona ninguna fecha
     const now = new Date();
     res.json({
-      unix: now.getTime() // Obtener el tiempo Unix en milisegundos
+      unix: now.getTime(), // Obtener el tiempo Unix en milisegundos
+      utc: now.toUTCString() // Obtener la representación UTC de la fecha actual
     });
     return;
   }
